@@ -7,19 +7,43 @@ import vispy                    # Main application support.
 
 import window                   # Terminal input and display.
 
+import nltk.chat
+
+AGENT_RESPONSES = [
+    (r'You are (worrying|scary|disturbing)',    # Pattern 1.
+        ['Yes, I am %1.',                         # Response 1a.
+        'Oh, sooo %1.']),
+
+    (r'Are you ([\w\s]+)\?',                    # Pattern 2.
+        ["Why would you think I am %1?",          # Response 2a.
+        "Would you like me to be %1?"]),
+
+    (r'',                                       # Pattern 3. (default)
+        ["Is everything OK?",                     # Response 3a.
+        "Can you still communicate?"])
+]
 
 class HAL9000(object):
     
+    
     def __init__(self, terminal):
+        self.chatbot = nltk.chat.Chat(AGENT_RESPONSES, nltk.chat.util.reflections)
         """Constructor for the agent, stores references to systems and initializes internal memory.
         """
         self.terminal = terminal
         self.location = 'unknown'
+        self.first = True;
 
     def on_input(self, evt):
         """Called when user types anything in the terminal, connected via event.
         """
-        self.terminal.log("Good morning! This is HAL.", align='right', color='#00805A')
+        if evt.text == ('Where am I?'):
+            self.terminal.log('\u2014 Now in the {}. \u2014'.format(self.location), align='center', color='#404040')
+        elif self.first:
+            self.terminal.log("Hello World! This is HAL.", align='right', color='#00805A')
+            self.first = False
+        else:
+            self.terminal.log(self.chatbot.respond(evt.text), align='right', color='#00805A')
 
     def on_command(self, evt):
         """Called when user types a command starting with `/` also done via events.
@@ -30,6 +54,7 @@ class HAL9000(object):
         elif evt.text.startswith('relocate'):
             self.terminal.log('', align='center', color='#404040')
             self.terminal.log('\u2014 Now in the {}. \u2014'.format(evt.text[9:]), align='center', color='#404040')
+            self.location = evt.text[9:]
 
         else:
             self.terminal.log('Command `{}` unknown.'.format(evt.text), align='left', color='#ff3000')    
