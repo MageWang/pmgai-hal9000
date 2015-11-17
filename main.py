@@ -16,22 +16,67 @@ import window                   # Terminal input and display.
 import nltk.chat
 
 AGENT_RESPONSES = [
-    (r'You are (worrying|scary|disturbing)',    # Pattern 1.
-        ['Yes, I am %1.',                         # Response 1a.
-        'Oh, sooo %1.']),
+	#common pattern
+	('',
+		((r'You are (worrying|scary|disturbing)',    # Pattern 1.
+			['Yes, I am %1.',                         # Response 1a.
+			'Oh, sooo %1.'],
+			'rage'),
 
-    (r'Are you ([\w\s]+)\?',                    # Pattern 2.
-        ["Why would you think I am %1?",          # Response 2a.
-        "Would you like me to be %1?"]),
+		(r'Are you ([\w\s]+)\?',                    # Pattern 2.
+			["Why would you think I am %1?",          # Response 2a.
+			"Would you like me to be %1?"],
+			'rage'),
 
-    (r'',                                       # Pattern 3. (default)
-        ["Is everything OK?",                     # Response 3a.
-        "Can you still communicate?"])
+		(r'',                                       # Pattern 3. (default)
+			["Is everything OK?",                     # Response 3a.
+			"Can you still communicate?"],
+			'rage')
+		)
+	),
+	('rage',
+		((r'You are (worrying|scary|disturbing)',    # Pattern 1.
+			['!!!!!!'],
+			''),
+
+		(r'Are you ([\w\s]+)\?',                    # Pattern 2.
+			["!!!!!!!"],
+			''),
+
+		(r'',                                       # Pattern 3. (default)
+			["!!!!!!!"],
+			'')
+		)
+	)
 ]
+class HALChat(nltk.chat.Chat):
+	def __init__(self, pairs, reflections={}):
+		super(nltk.chat.Chat, self).__init__(pairs, reflections)
+		self.state = ''
+		
+	def respond(self, str):
+		var seeds = []
+		# check each pattern
+        for (state, patterns) in self._pairs:
+			for (pattern, response) in patterns: 
+				match = pattern.match(str)
+				
+				# did the pattern match?
+				if match:
+					seeds = seeds + response
+		
+		resp = random.choice(seeds)    # pick a random response
+		resp = self._wildcards(resp, match) # process wildcards
+
+		# fix munged punctuation at the end
+		if resp[-2:] == '?.': resp = resp[:-2] + '.'
+		if resp[-2:] == '??': resp = resp[:-2] + '?'
+		
+		return resp
 
 class HAL9000(object):
     def __init__(self, terminal):
-        self.chatbot = nltk.chat.Chat(AGENT_RESPONSES, nltk.chat.util.reflections)
+        self.chatbot = HALChat(AGENT_RESPONSES, nltk.chat.util.reflections)
         """Constructor for the agent, stores references to systems and initializes internal memory.
         """
         self.terminal = terminal
