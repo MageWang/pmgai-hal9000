@@ -49,6 +49,14 @@ AGENT_RESPONSES = [
 		)
 	)
 ]
+"""
+	input:
+		init: patterns
+		on input: human input
+	
+	output: 
+		respond santence
+"""
 class HALChat(nltk.chat.Chat):
 	def __init__(self, pairs, reflections={}):
 		super(nltk.chat.Chat, self).__init__(pairs, reflections)
@@ -96,7 +104,7 @@ class HAL9000(object):
             self.first = False
 
         else:
-            self.terminal.log(self.respond(evt.text), align='right', color='#00805A')
+            self.terminal.log(self.chatbot.respond(evt.text), align='right', color='#00805A')
 
     def on_command(self, evt):
         """Called when user types a command starting with `/` also done via events.
@@ -123,8 +131,6 @@ class HAL9000(object):
         """
         pass
 
-    def respond(self, str):
-        return self.chatbot.respond(str)
 
 class Application(object):
     
