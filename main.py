@@ -58,6 +58,9 @@ class HALChat(nltk.chat.Chat):
 		var seeds = []
 		# check each pattern
         for (state, patterns) in self._pairs:
+			if state != self.state:
+				continue
+			
 			for (pattern, response) in patterns: 
 				match = pattern.match(str)
 				
