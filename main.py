@@ -10,43 +10,22 @@ AI 偶而可以搶話?
 對話依現有條件而有所不同
 """
 import vispy                    # Main application support.
-
 import window                   # Terminal input and display.
-
 import nltk.chat
 
 AGENT_RESPONSES = [
 	#common pattern
-	('',
-		((r'You are (worrying|scary|disturbing)',    # Pattern 1.
-			['Yes, I am %1.',                         # Response 1a.
-			'Oh, sooo %1.'],
-			'rage'),
-
-		(r'Are you ([\w\s]+)\?',                    # Pattern 2.
-			["Why would you think I am %1?",          # Response 2a.
-			"Would you like me to be %1?"],
-			'rage'),
-
-		(r'',                                       # Pattern 3. (default)
-			["Is everything OK?",                     # Response 3a.
-			"Can you still communicate?"],
-			'rage')
-		)
+	(r'You are (worrying|scary|disturbing)',    # Pattern 1.
+		[('Yes, I am %1.', []),                         # Response 1a.
+		('Oh, sooo %1.', [])]
 	),
-	('rage',
-		((r'You are (worrying|scary|disturbing)',    # Pattern 1.
-			['!!!!!!'],
-			''),
-
-		(r'Are you ([\w\s]+)\?',                    # Pattern 2.
-			["!!!!!!!"],
-			''),
-
-		(r'',                                       # Pattern 3. (default)
-			["!!!!!!!"],
-			'')
-		)
+	(r'Are you ([\w\s]+)\?',                    # Pattern 2.
+		[("Why would you think I am %1?",[]),          # Response 2a.
+		("Would you like me to be %1?",[])]
+	),
+	(r'',                                       # Pattern 3. (default)
+		[("Is everything OK?",[]),                     # Response 3a.
+		("Can you still communicate?",[])]
 	)
 ]
 """
@@ -58,23 +37,24 @@ AGENT_RESPONSES = [
 		respond santence
 """
 class HALChat(nltk.chat.Chat):
-	def __init__(self, pairs, reflections={}):
-		super(nltk.chat.Chat, self).__init__(pairs, reflections)
-		self.state = ''
-		
-	def respond(self, str):
+	def respond(self, str, tags=[]):
 		var seeds = []
 		# check each pattern
-        for (state, patterns) in self._pairs:
-			if state != self.state:
+        for (pattern, response) in patterns: 
+			match = pattern.match(str)
+			# did the pattern match?
+			
+			if ~match:
 				continue
 			
-			for (pattern, response) in patterns: 
-				match = pattern.match(str)
+			for (sentence, conditions) in response:
+				if conditions == []:
+					seeds.append(sentence)
+					continue
 				
-				# did the pattern match?
-				if match:
-					seeds = seeds + response
+				if len(set.intersection(tags, conditions)) == len(tags):
+					seeds.append(sentence)
+					continue
 		
 		resp = random.choice(seeds)    # pick a random response
 		resp = self._wildcards(resp, match) # process wildcards
